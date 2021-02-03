@@ -1,0 +1,17 @@
+[package]
+name = "lib"
+version = "0.1.0"
+authors = ["Oliver Stenning <git@ostenning.com>"]
+edition = "2018"
+description = "A simple platform agnostic library for the Texas Instruments DAC8564"
+keywords = ["embedded-hal", "driver", "dac", "8564", "dac8564", "digital to analogue converter"]
+categories = ["embedded", "hardware-support", "no-std"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/ostenning/dac8564"
+
+[dependencies]
+embedded-hal = { version = "0.2.4", features = ["unproven"] }
+
+[features]
+default = []
