@@ -1,2 +1,3 @@
-# DAC5864
-Embedded rust driver for the TI DAC5864
+# DAC8564
+
+A simple platform agnostic library for the Texas Instruments DAC8564.
