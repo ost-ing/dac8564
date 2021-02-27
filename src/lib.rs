@@ -1,36 +1,56 @@
-// #![deny(missing_docs)]
-// #![deny(warnings)]
+//! # dac8564 library
+//! A small library for using the dac8564.
+
+#![deny(missing_docs)]
+#![deny(warnings)]
 #![no_std]
+#![allow(dead_code)]
 
 use embedded_hal::digital::v2::OutputPin;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
-
-struct Dac<SPI, NSS, LDAC, ENABLE> {
-    spi: SPI,
+/// DAC8564
+pub struct Dac<NSS, LDAC, ENABLE> {
     nss: NSS,
     ldac: LDAC,
     enable: ENABLE,
     active: bool,
 }
 
+/// Channel selection enum
+/// DAC5864 has 4 different channels
 #[allow(dead_code)]
 #[repr(u8)]
 #[derive(PartialEq)]
 pub enum Channel {
+    /// Channel A
     A = 0b0000,
+    /// Channel B
     B = 0b0010,
+    /// Channel C
     C = 0b0100,
+    /// Channel D
     D = 0b0110,
+    /// All Channels
     ALL = 0b0111,
 }
 
+impl Channel {
+    /// Get the Channel enumeration from an index (begins at 0)
+    pub fn from_index(index: u8) -> Channel {
+        if index == 0 {
+            return Channel::A;
+        } else if index == 1 {
+            return Channel::B;
+        } else if index == 2 {
+            return Channel::C;
+        } else if index == 3 {
+            return Channel::D;
+        }
+        panic!("Channel unknown for index {}", index);
+    }
+}
+
+/// DAC Related errors
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum DacError {
@@ -38,21 +58,8 @@ pub enum DacError {
     BusWriteError,
 }
 
-#[allow(dead_code)]
-pub fn index_to_channel(val: u8) -> Channel {
-    if val == 0 {
-        return Channel::A;
-    } else if val == 1 {
-        return Channel::B;
-    } else if val == 2 {
-        return Channel::C;
-    } else if val == 3 {
-        return Channel::D;
-    }
-    panic!("Channel unknown for index {}", val);
-}
-
-#[allow(dead_code)]
+/// Helper function to get the correct communication payload that
+/// is sent down the wire to the DAC
 fn get_payload(channel: Channel, value: u16) -> [u8; 3] {
     let mut command: [u8; 3] = [0; 3];
 
@@ -70,62 +77,92 @@ fn get_payload(channel: Channel, value: u16) -> [u8; 3] {
     command
 }
 
-impl<SPI, NSS, LDAC, ENABLE> Dac<SPI, NSS, LDAC, ENABLE>
+/// Platform agnostic delay helper
+fn delay() {
+    let mut x = 0;
+    while x < 10000 {
+        x += 1;
+    }
+}
+
+impl<NSS, LDAC, ENABLE> Dac<NSS, LDAC, ENABLE>
 where
     NSS: OutputPin,
     LDAC: OutputPin,
     ENABLE: OutputPin,
-    SPI: embedded_hal::blocking::spi::Write<u8>,
 {
-    #[allow(dead_code)]
+    /// Initialize a new instance of DAC8564
+    pub fn new(nss: NSS, ldac: LDAC, enable: ENABLE) -> Self {
+        Self {
+            nss,
+            ldac,
+            enable,
+            active: false,
+        }
+    }
+
+    /// Enables the DAC by toggling the Enable, NSS and LDAC lines
     pub fn enable(&mut self) {
-        self.enable.set_low();
-        self.nss.set_low();
-        self.nss.set_high();
-        self.enable.set_high();
+        self.enable.set_low().unwrap_or_default();
+        self.nss.set_low().unwrap_or_default();
+        self.nss.set_high().unwrap_or_default();
+        self.enable.set_high().unwrap_or_default();
 
         // Rising edge to reset the DAC registers
-        self.ldac.set_low();
+        self.ldac.set_low().unwrap_or_default();
 
-        // Wait
-        let mut x = 0;
-        while x < 10000 {
-            x += 1;
-        }
-        self.ldac.set_high();
+        delay();
+        self.ldac.set_high().unwrap_or_default();
 
-        // Wait
-        x = 0;
-        while x < 10000 {
-            x += 1;
-        }
-
-        self.ldac.set_low();
-
+        delay();
+        self.ldac.set_low().unwrap_or_default();
         self.active = true;
     }
 
-    #[allow(dead_code)]
-    pub fn set_value(&mut self, channel: Channel, value: u16) -> Result<(), DacError> {
+    /// Write to the DAC via a blocking call on the specified SPI interface
+    pub fn write_blocking(
+        &mut self,
+        spi: &mut dyn embedded_hal::blocking::spi::Write<u8, Error = ()>,
+        channel: Channel,
+        value: u16,
+    ) -> Result<(), DacError> {
         if !self.active {
             return Ok(());
         }
-
         let command: [u8; 3] = get_payload(channel, value);
-        self.write(&command)
-    }
 
-    #[allow(dead_code)]
-    fn write(&mut self, values: &[u8]) -> Result<(), DacError> {
-        self.enable.set_low();
-        self.nss.set_low();
-        let result = self.spi.write(values);
-        self.nss.set_high();
-        self.enable.set_high();
+        self.enable.set_low().unwrap_or_default();
+        self.nss.set_low().unwrap_or_default();
+        let result = spi.write(&command);
+        self.nss.set_high().unwrap_or_default();
+        self.enable.set_high().unwrap_or_default();
 
         match result {
             Ok(v) => Ok(v),
             Err(_e) => Err(DacError::BusWriteError),
         }
+    }
+
+    /// For asynchronous communication methods (e.g. Interrupt or DMA), this function
+    /// prepares the DAC for the transfer, generates the command and passes it back to the initiator
+    /// via the callback parameter
+    pub fn prepare_transfer<F: FnMut([u8; 3]) -> ()>(
+        &mut self,
+        channel: Channel,
+        value: u16,
+        mut callback: F,
+    ) {
+        if !self.active {
+            return;
+        }
+        let command: [u8; 3] = get_payload(channel, value);
+
+        self.enable.set_low().unwrap_or_default();
+        self.nss.set_low().unwrap_or_default();
+
+        callback(command);
+
+        self.nss.set_high().unwrap_or_default();
+        self.enable.set_high().unwrap_or_default();
     }
 }
