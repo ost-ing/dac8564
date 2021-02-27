@@ -10,6 +10,10 @@ A simple platform agnostic library for the Texas Instruments DAC8564.
 - Implemented with embedded-hal (https://docs.rs/embedded-hal/0.2.3/embedded_hal)
 - Blocking and non-blocking support
 
+## installation
+
+Add the package via Cargo: `dac8564 = "0.0.1"`
+
 ## example
 
 Note: Quick example based on the `stm32h7xx-hal`.
