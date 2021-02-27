@@ -2,6 +2,14 @@
 
 A simple platform agnostic library for the Texas Instruments DAC8564.
 
+- https://crates.io/crates/dac8564
+
+## features
+
+- Full no-std support
+- Implemented with embedded-hal (https://docs.rs/embedded-hal/0.2.3/embedded_hal)
+- Blocking and non-blocking support
+
 ## example
 
 Note: Quick example based on the `stm32h7xx-hal`.
