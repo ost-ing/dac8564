@@ -1,18 +1,17 @@
 # dac8564
 
-A simple platform agnostic library for the Texas Instruments DAC8564.
+A platform agnostic library for the Texas Instruments DAC8564.
 
 - https://crates.io/crates/dac8564
 
+Add the package with Cargo: `dac8564 = "0.0.1"`
+
 ## features
 
+- Also supports the Texas Instruments DAC7565, DAC7564, DAC8164
 - Full no-std support
 - Implemented with embedded-hal (https://docs.rs/embedded-hal/0.2.3/embedded_hal)
 - Blocking and non-blocking support
-
-## installation
-
-Add the package via Cargo: `dac8564 = "0.0.1"`
 
 ## example
 
@@ -55,10 +54,10 @@ fn main() -> ! {
     let mut dac = dac8564::Dac::new(nss, ldac, enable);
     dac.enable();
 
-    // Blocking call. Set value to 1000 on the DAC
+    // Prepare the transfer, the payload value here is the data that needs to be
+    // written to some kind of buffer, e.g. for DMA or Interrupt usage.
     dac.prepare_transfer(Channel::A, 1000, |payload| {
-        // Write values to a DMA buffer
+        // Write payload values to a DMA buffer
     });
 }
-
 ```
