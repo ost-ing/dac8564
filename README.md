@@ -4,8 +4,6 @@ A platform agnostic library for the Texas Instruments DAC8564.
 
 - https://crates.io/crates/dac8564
 
-Add the package with Cargo: `dac8564 = "0.0.1"`
-
 ## features
 
 - Also supports the Texas Instruments DAC7565, DAC7564, DAC8164
@@ -19,7 +17,7 @@ Note: Quick example based on the `stm32h7xx-hal`.
 
 ### blocking
 
-```
+```rust
 fn main() -> ! {
     // SPI interface pins
     let sck = sck.into_alternate_af5();
@@ -49,7 +47,7 @@ fn main() -> ! {
 
 ### non-blocking
 
-```
+```rust
 fn main() -> ! {
     let mut dac = dac8564::Dac::new(nss, ldac, enable);
     dac.enable();
