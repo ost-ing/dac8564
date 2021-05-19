@@ -9,7 +9,8 @@
 use embedded_hal::digital::v2::OutputPin;
 
 /// DAC8564
-pub struct Dac<NSS, LDAC, ENABLE> {
+pub struct Dac<SPI, NSS, LDAC, ENABLE> {
+    spi: SPI,
     nss: NSS,
     ldac: LDAC,
     enable: ENABLE,
@@ -60,7 +61,7 @@ pub enum DacError {
 
 /// Helper function to get the correct communication payload that
 /// is sent down the wire to the DAC
-fn get_payload(channel: Channel, value: u16) -> [u8; 3] {
+pub fn get_payload(channel: Channel, value: u16) -> [u8; 3] {
     let mut command: [u8; 3] = [0; 3];
 
     // Channel select
@@ -85,15 +86,17 @@ fn delay() {
     }
 }
 
-impl<NSS, LDAC, ENABLE> Dac<NSS, LDAC, ENABLE>
+impl<SPI, NSS, LDAC, ENABLE> Dac<SPI, NSS, LDAC, ENABLE>
 where
+    SPI: embedded_hal::blocking::spi::Write<u8>,
     NSS: OutputPin,
     LDAC: OutputPin,
     ENABLE: OutputPin,
 {
     /// Initialize a new instance of DAC8564
-    pub fn new(nss: NSS, ldac: LDAC, enable: ENABLE) -> Self {
+    pub fn new(spi: SPI, nss: NSS, ldac: LDAC, enable: ENABLE) -> Self {
         Self {
+            spi,
             nss,
             ldac,
             enable,
@@ -120,9 +123,8 @@ where
     }
 
     /// Write to the DAC via a blocking call on the specified SPI interface
-    pub fn write_blocking(
+    pub fn write(
         &mut self,
-        spi: &mut dyn embedded_hal::blocking::spi::Write<u8, Error = ()>,
         channel: Channel,
         value: u16,
     ) -> Result<(), DacError> {
@@ -133,7 +135,7 @@ where
 
         self.enable.set_low().unwrap_or_default();
         self.nss.set_low().unwrap_or_default();
-        let result = spi.write(&command);
+        let result = self.spi.write(&command);
         self.nss.set_high().unwrap_or_default();
         self.enable.set_high().unwrap_or_default();
 
@@ -141,28 +143,5 @@ where
             Ok(v) => Ok(v),
             Err(_e) => Err(DacError::BusWriteError),
         }
-    }
-
-    /// For asynchronous communication methods (e.g. Interrupt or DMA), this function
-    /// prepares the DAC for the transfer, generates the command and passes it back to the initiator
-    /// via the callback parameter
-    pub fn prepare_transfer<F: FnMut([u8; 3]) -> ()>(
-        &mut self,
-        channel: Channel,
-        value: u16,
-        mut callback: F,
-    ) {
-        if !self.active {
-            return;
-        }
-        let command: [u8; 3] = get_payload(channel, value);
-
-        self.enable.set_low().unwrap_or_default();
-        self.nss.set_low().unwrap_or_default();
-
-        callback(command);
-
-        self.nss.set_high().unwrap_or_default();
-        self.enable.set_high().unwrap_or_default();
     }
 }
