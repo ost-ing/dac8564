@@ -1,6 +1,6 @@
 [package]
 name = "dac8564"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Oliver Stenning <code@ostenning.com>"]
 edition = "2018"
 description = "A simple platform agnostic library for the Texas Instruments DAC8564"

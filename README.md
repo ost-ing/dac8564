@@ -4,6 +4,12 @@ A platform agnostic library for the Texas Instruments DAC8564.
 
 - https://crates.io/crates/dac8564
 
+![dac8564](/documentation/dac8564_ssop16.png)
+
+## description
+
+The DAC8564 is a low-power, voltage-output, four-channel, 16-bit digital-to-analog converter (DAC). The device includes a 2.5V, 2ppm/°C internal, reference (enabled by default), giving a full-scale output voltage range of 2.5V. The internal reference has an initial accuracy of 0.004% and can source up to 20mA at the VREFH/VREFOUT pin. The device is monotonic, provides very good linearity, and minimizes undesired code-to-code transient voltages (glitch). The DAC8564 uses a versatile 3-wire serial interface that operates at clock rates up to 50MHz. The interface is compatible with standard SPI™, QSPI™,  Microwire™, and digital signal processor (DSP) interfaces.
+
 ## features
 
 - Also supports the Texas Instruments DAC7565, DAC7564, DAC8164
@@ -13,7 +19,7 @@ A platform agnostic library for the Texas Instruments DAC8564.
 
 ## example
 
-Note: Quick example based on the `stm32h7xx-hal`.
+Note: Example based on the `stm32h7xx-hal`.
 
 ### blocking
 
@@ -36,26 +42,16 @@ fn main() -> ! {
         clocks,
     );
 
-    let mut dac = dac8564::Dac::new(nss, ldac, enable);
+    let mut dac = dac8564::Dac::new(spi, nss, ldac, enable);
+
+    // Enable the DAC8564
     dac.enable();
 
     // Blocking call. Set value to 1000 on the DAC
-    dac.write_blocking(&spi, Channel::A, 1000);
-}
-
-```
-
-### non-blocking
-
-```rust
-fn main() -> ! {
-    let mut dac = dac8564::Dac::new(nss, ldac, enable);
-    dac.enable();
-
-    // Prepare the transfer, the payload value here is the data that needs to be
-    // written to some kind of buffer, e.g. for DMA or Interrupt usage.
-    dac.prepare_transfer(Channel::A, 1000, |payload| {
-        // Write payload values to a DMA buffer
-    });
+    dac.write(Channel::A, 1000).unwrap();
 }
 ```
+
+## contributing
+
+I am not actively using the `DAC8564` chip in any of my current prototypes. For this reason development, features and bug fixes could be slow, but I am fully open to any contribution. Please create a PR if you have any changes 🙏🏼
