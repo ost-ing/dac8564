@@ -1,6 +1,6 @@
 [package]
 name = "dac8564"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Oliver Stenning <code@ostenning.com>"]
 edition = "2018"
 description = "A simple platform agnostic library for the Texas Instruments DAC8564"
@@ -11,7 +11,7 @@ readme = "README.md"
 repository = "https://github.com/ostenning/dac8564"
 
 [dependencies]
-embedded-hal = { version = "0.2.4", features = ["unproven"] }
+embedded-hal = { version = "0.2.7", features = ["unproven"] }
 
 [features]
 default = []
