@@ -1,14 +1,14 @@
 [package]
 name = "dac8564"
-version = "0.0.4"
-authors = ["Oliver Stenning <code@ostenning.com>"]
+version = "0.0.5"
+authors = ["Oliver <18360865+ost-ing@users.noreply.github.com>"]
 edition = "2018"
 description = "A simple platform agnostic library for the Texas Instruments DAC8564"
 keywords = ["embedded-hal", "driver", "dac", "8564", "dac8564"]
 categories = ["embedded", "hardware-support", "no-std"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/ostenning/dac8564"
+repository = "https://github.com/ost-ing/dac8564"
 
 [dependencies]
 embedded-hal = { version = "0.2.7", features = ["unproven"] }
